@@ -40,6 +40,14 @@ document.addEventListener("keydown", event => {
      x += 5;
     //left
   }
+  if (event.isComposing || event.keyCode === 87) {
+     y += 5;
+    //up
+  }
+  if (event.isComposing || event.keyCode === 83) {
+     y += -5;
+    //down
+  }
 });
 function random(){
   return Math.floor(Math.random() * 700);
