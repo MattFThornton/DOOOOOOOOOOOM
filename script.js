@@ -8,12 +8,19 @@ let x = 443;
 let y = 443;
 let num = 2000;
 const fov = 60/num * Math.PI / 180;
-let turn = 0 * Math.PI / 180; //turns camera x degrees clockwise
+let turn = 195 * Math.PI / 180; //turns camera x degrees clockwise
 let distances = [];
 let facing = 0;
 let distance = 0;
 const angle = 60;
 let count = 0;
+let wallproperty = {};
+let rayinfo = [];
+let wallnum = 0;
+let hitwalls = [];
+let hitwallsbig = [];
+let screenpercents = [];
+let screenspacing = [];
 //controls
 document.addEventListener("keydown", event => {
   if (event.isComposing || event.keyCode === 37) {
@@ -40,17 +47,11 @@ document.addEventListener("keydown", event => {
      x += 5;
     //left
   }
-  if (event.isComposing || event.keyCode === 87) {
-     y += 5;
-    //up
-  }
-  if (event.isComposing || event.keyCode === 83) {
-     y += -5;
-    //down
-  }
 });
+
+
 function random(){
-  return Math.floor(Math.random() * 700);
+  return Math.floor(Math.random() * 255);
 }
 function drawMap(){
   let i = 0;
@@ -69,12 +70,15 @@ function drawMap(){
   mapCoords.push([650,300,700,300]);
   mapCoords.push([650,300,650,500]);
   mapCoords.push([650,500,700,500]);
+
   while (i < mapCoords.length){
     //mapCoords.push([random(),random(),random(),random()]);
     ctx.beginPath();
+    wallproperty[ i ] = i;
     ctx.moveTo(mapCoords[i][0],mapCoords[i][1]);
     ctx.lineTo(mapCoords[i][2],mapCoords[i][3]);
     ctx.stroke();
+    hitwalls.push(0);
     i++;
   }
   //creates player(circle)
@@ -86,13 +90,16 @@ function drawMap(){
 }
 function updateMap(){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  hitwalls = [];
+  hitwallsbig = [];
   i = 0;
   while (i < mapCoords.length){
     // updates map(7 lines)
     ctx.beginPath();
     ctx.moveTo(mapCoords[i][0],mapCoords[i][1]);
     ctx.lineTo(mapCoords[i][2],mapCoords[i][3]);
+    hitwalls.push(0);
+    hitwallsbig.push(0);
     ctx.stroke();
     i++;
   }
@@ -107,6 +114,7 @@ function createRays(){
   count = 0;
   distances = [];
   i = 0;
+  rayinfo = [];
   //sets length of lines
   let newx = 395;
   let newy = 395;
@@ -154,6 +162,7 @@ function createRays(){
           if (change<length){
             bruhx = finalx;
             bruhy = finaly;
+            wallnum = n;
             distance = Math.sqrt(Math.pow((bruhx-x), 2) + Math.pow((bruhy-y), 2));
             distance = Math.pow(distance, 2)/1000;
             if (distance<1){
@@ -168,6 +177,8 @@ function createRays(){
     if (horizonx === bruhx && horizony === bruhy){
       for(u=0;u<distance;u++){
       distances.push(558);
+      rayinfo.push(wallnum);
+      hitwallsbig[wallnum] += 1
       }
     } else{
       for(u=0;u<distance;u++){
@@ -175,6 +186,8 @@ function createRays(){
         let radangle = (angle * Math.PI / 180)/2 - (abr * i);
         let tempdist = Math.sqrt(Math.pow((bruhx-x), 2) + Math.pow((bruhy-y), 2));
         distances.push(tempdist * Math.cos(radangle));
+        rayinfo.push(wallnum);
+        hitwallsbig[wallnum] += 1
         //distances.push(Math.sqrt(Math.pow((bruhx-x), 2) + Math.pow((bruhy-y), 2)));
       }
     }
@@ -182,6 +195,7 @@ function createRays(){
       facingrise = (y-bruhy);
       facingrun = (x-bruhx);
     }
+    hitwalls[wallnum] += 1; //increments each wall value being hit
     ctx.moveTo(x, y);
     ctx.lineTo(bruhx, bruhy);
     i += 1;
@@ -189,24 +203,49 @@ function createRays(){
     ctx.stroke();
 }
 function render(){
+  screenspacing = [];
+  screenpercents = [];
+  for (h of hitwalls){
+    if (h > 0) {
+    screenpercents.push(h/2000);
+   } else{
+    screenpercents.push(0);
+  }
+  }
+  i=0;
+  for (h of hitwallsbig){
+    if (h > 0) {
+     screenspacing.push((700*screenpercents[i])/h);
+   } else{
+     screenspacing.push(0);
+   }
+   i+=1;
+  }
+
   ctx2.clearRect(0, 0, canvas.width, canvas.height);
   i = 0;
+  p = 0;
+  let increase = 0;
   let xspacing = 700/distances.length; //sets density of lines
   while (i <= distances.length){
+    let w = rayinfo[i];
+    increase += screenspacing[w] * 10;
     //c = String((distances[i] - 50)/5);
     c = String(200 - (distances[i] * 0.35));
     ctx2.strokeStyle = `rgb(${c}, ${c}, ${c})`;
     ctx2.beginPath();
     let lineheight = Math.sqrt(Math.pow((100+(distances[i])* 0.75-600), 2));
-    ctx2.moveTo(i * xspacing, 500+(lineheight/4),2);
-    ctx2.lineTo(i * xspacing, 100+(distances[i])* 0.75);
+    ctx2.moveTo(increase, 500+(lineheight/4));
+    ctx2.lineTo(increase, 100+(distances[i])* 0.75);
     ctx2.stroke();
     if (distances.length < 9000){
       i++;
+      p++;
     } else{
       i += 10;
+      p+= 10;
     }
-
+    p = 0;
   }
 
 }
